@@ -1,0 +1,874 @@
+---
+title: "DANA-4820_Final Project"
+author: "Patricia Tating, Milkah Nyaingo, Alexandra Perocho & Maryam Gadimova"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# STUDY OBJECTIVE
+
+1.	What is the relationship between lifestyle factors such as smoking, alcohol consumption, exercise habits, stress level, sedentary behavior, physical activity, and sleep patterns with the likelihood of heart attack risk?
+2.	What is the likelihood of having a heart attack when a patient has certain medical conditions or medical history?
+3.	What is the association of demographic factors such as age, gender, income, and country with the likelihood of having a heart attack?
+
+# ABOUT THE DATA
+
+This dataset is taken from Kaggle consisting of 8,763 records from patients around the globe with 26 variables:
+
+* Patient ID - Unique identifier for each patient
+* Age - Age of the patient
+* Sex - Gender of the patient (Male/Female)
+* Cholesterol - Cholesterol levels of the patient
+* Blood Pressure - Blood pressure of the patient (systolic/diastolic)
+* Heart Rate - Heart rate of the patient
+* Diabetes - Whether the patient has diabetes (Yes/No)
+* Family History - Family history of heart-related problems (1: Yes, 0: No)
+* Smoking - Smoking status of the patient (1: Smoker, 0: Non-smoker)
+* Obesity - Obesity status of the patient (1: Obese, 0: Not obese)
+* Alcohol Consumption - Level of alcohol consumption by the patient (None/Light/Moderate/Heavy)
+* Exercise Hours Per Week - Number of exercise hours per week
+* Diet - Dietary habits of the patient (Healthy/Average/Unhealthy)
+* Previous Heart Problems - Previous heart problems of the patient (1: Yes, 0: No)
+* Medication Use - Medication usage by the patient (1: Yes, 0: No)
+* Stress Level - Stress level reported by the patient (1-10)
+* Sedentary Hours Per Day - Hours of sedentary activity per day
+* Income - Income level of the patient
+* BMI - Body Mass Index (BMI) of the patient
+* Triglycerides - Triglyceride levels of the patient
+* Physical Activity Days Per Week - Days of physical activity per week
+* Sleep Hours Per Day - Hours of sleep per day
+* Country - Country of the patient
+* Continent - Continent where the patient resides
+* Hemisphere - Hemisphere where the patient resides
+* Heart Attack Risk - Presence of heart attack risk (1: Yes, 0: No)
+
+
+# READING THE DATA
+
+```{r}
+heart <- read.csv("heart_attack_prediction_dataset.csv", header = TRUE)
+head(heart)
+```
+
+# EXPLORATORY DATA ANALYSIS
+
+```{r}
+## Check for missing values of the data set
+sum(is.na(heart))
+```
+There are no missing values for this dataset.
+
+```{r}
+## Check the dimensions of the dataset
+dim(heart)
+```
+There are 8763 rows and 26 columns.
+
+```{r}
+## Determine the class of each variable
+variable_types <- sapply(heart, class)
+variable_types 
+```
+```{r}
+str(heart)
+```
+
+*Histograms and Charts of the Variables*
+
+```{r}
+countries <- table(heart$Country)
+
+## Histogram of different countries in Heart Attack Risk
+barplot(countries, 
+        main = "Count of Countries in Heart Attack Risk Dataset", 
+        ylab = "Count",
+        col = gray.colors(length(countries), start = 0.7, end = 0.3),  
+        las = 2,
+        cex.names = 0.7,
+        ylim = c(0, max(countries) * 1.2)) 
+```
+
+```{r}
+## Plot of different type of gender in Heart attack
+gender <- table(heart$Sex)
+gender
+barplot(gender, 
+        main = "Distribution of Gender in Heart Attack Dataset", 
+        xlab = "Gender", 
+        ylab = "Count",
+        col = c("salmon", "lightblue"),  
+        ylim = c(0, max(gender) * 1.2),  
+        names.arg = c("Female", "Male"),  
+        cex.names = 0.8  
+)
+
+
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(heart, aes(x = Sex, y = Age, fill = Sex)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Age by Gender in Heart Attack Dataset",
+       x = "Gender",
+       y = "Age") +
+  scale_fill_manual(values = c("salmon", "lightblue")) +  
+  theme_minimal()
+```
+
+
+```{r}
+## Plot of different type of gender in Heart attack
+gender <- table(heart$Sex)
+gender
+barplot(gender, 
+        main = "Distribution of Gender in Heart Attack Dataset", 
+        xlab = "Gender", 
+        ylab = "Count",
+        col = c("salmon", "lightblue"),  
+        ylim = c(0, max(gender) * 1.2),  # Adjust y-axis limits
+        names.arg = c("Female", "Male"),  # Specify gender labels
+        cex.names = 0.8  # Adjust size of gender labels
+)
+
+```
+
+
+
+```{r}
+## pie plot of heart attack
+heart$Heart.Attack.Risk <- ifelse(heart$Heart.Attack.Risk == 1, "Yes", "No")
+heart_attack <- table(heart$Heart.Attack.Risk)
+
+percentages_heart <- prop.table(heart_attack) * 100
+custom <- c("salmon", "lightblue")  
+
+# Create a pie chart with percentages
+pie(heart_attack,
+    main = "Distribution of Heart Attack Occurrence",
+    labels = paste0(round(percentages_heart, 1), "%"),
+    col = custom
+)
+
+legend("topright", legend = names(heart_attack), fill = custom)
+
+
+```
+
+
+```{r}
+counts <- table(heart$Smoking)
+
+data <- as.data.frame(counts)
+names(data) <- c("Smoking", "Count")
+
+data$Smoking <- factor(data$Smoking, levels = c(0, 1), labels = c("No", "Yes"))
+
+ggplot(data, aes(x="", y=Count, fill=Smoking)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title="Smoking Status of the Patients",
+       fill="Smoking Status") +
+  theme_void() +
+  theme(legend.title = element_text(size=12),
+        legend.text = element_text(size=10),
+        plot.title = element_text(size=16, hjust = 0.5)) +
+  scale_fill_manual(values = c("salmon", "lightblue") , labels = c("No", "Yes"))
+
+```
+
+```{r}
+## pie plot of Diabetes
+heart$Diabetes <- ifelse(heart$Diabetes == 1, "Diabetes", "No Diabetes")
+diabetes <- table(heart$Diabetes)
+
+percentages_diabetes <- prop.table(diabetes) * 100
+color <- c("salmon", "lightblue") 
+
+pie(diabetes,
+    main = "Distribution of Diabetes Status",
+    labels = paste0(round(percentages_diabetes, 1), "%"),
+    col = color
+)
+
+legend("topright", legend = names(diabetes), fill = color)
+```
+
+
+
+```{r}
+## pie plot of Previous Heart Problems
+heart$Previous.Heart.Problems <- ifelse(heart$Previous.Heart.Problems == 1, "Yes", "No")
+problems <- table(heart$Previous.Heart.Problems)
+
+percentages_problems <- prop.table(problems) * 100
+col <- c("salmon", "lightblue") 
+
+pie(problems,
+    main = "Distribution of Previous Heart Problems Status",
+    labels = paste0(round(percentages_problems, 1), "%"),
+    col = col
+)
+
+legend("topright", legend = names(problems), fill = col)
+
+```
+
+
+## Odds Ratio
+
+```{r}
+# Load the library
+library(dplyr)
+# Create the 2x2 contingency table
+contingency_table <- table(heart$Smoking, heart$Heart.Attack.Risk)
+
+# Extract values from the contingency table
+a <- contingency_table[2, 2]  # smokers with risk
+b <- contingency_table[2, 1]  # smokers without risk
+c <- contingency_table[1, 2]  # non-smokers with risk
+d <- contingency_table[1, 1]  # non-smokers without risk
+
+# Calculate the odds ratio
+odds_ratio <- (a/b) / (c/d)
+
+# Print the odds ratio
+cat("The odds ratio for smoking and heart attack risk is:", round(odds_ratio, 2), "\n")
+```
+## The odds ratio for Smoking and Heart Attack Risk is approximately 0.97. This suggests that smoking does not significantly influence the odds of having a heart attack in the given dataset.
+
+```{r}
+# Function to calculate odds ratio
+calculate_odds_ratio <- function(variable) {
+  contingency_table <- table(heart[, variable], heart$Heart.Attack.Risk)
+  
+  # Extract values from the contingency table
+  a <- contingency_table[2, 2]  # Variable = 1 with risk
+  b <- contingency_table[2, 1]  # Variable = 1 without risk
+  c <- contingency_table[1, 2]  # Variable = 0 with risk
+  d <- contingency_table[1, 1]  # Variable = 0 without risk
+  
+  # Calculate the odds ratio
+  odds_ratio <- (a/b) / (c/d)
+  
+  return(round(odds_ratio, 2))
+}
+
+# Calculate and print the odds ratio for each variable
+variables <- c("Sex", "Diabetes", "Family.History", "Obesity", "Alcohol.Consumption", "Previous.Heart.Problems")
+
+for (var in variables) {
+  odds_ratio <- calculate_odds_ratio(var)
+  cat(paste("The odds ratio for", var, "and heart attack risk is:", odds_ratio, "\n"))
+}
+```
+## The odds ratio for Sex and Heart Attack Risk is approximately 1.01. This indicates that there is a very slight increase in the odds of having a heart attack for one gender compared to the other.
+
+## The odds ratio for Diabetes and Heart Attack Risk is approximately 1.08. This suggests that individuals with diabetes have slightly higher odds of experiencing a heart attack compared to those without diabetes.
+
+## The odds ratio for Family.History and Heart Attack Risk is approximately 0.99. This suggests that having a family history of heart-related problems does not significantly influence the odds of having a heart attack.
+
+## The odds ratio for Obesity and Heart Attack Risk is approximately 0.95. This suggests that obesity may slightly decrease the odds of having a heart attack.
+
+## The odds ratio for Alcohol.Consumption and Heart Attack Risk is approximately 0.94. This suggests that alcohol consumption may slightly reduce the odds of having a heart attack.
+
+## The odds ratio for Previous.Heart.Problems and Heart Attack Risk is 1. This indicates that the odds of having a heart attack are the same for individuals with and without previous heart problems.
+
+
+
+
+
+
+
+## Chi-Square Test of Independence
+
+
+## H0: There is no association between having diabetes and the risk of heart attack.
+## Ha: There is an association between having diabetes and the risk of heart attack.
+
+```{r}
+# Load required library
+library(dplyr)
+
+# Create a subset of the data for the Chi-Square test
+subset_data <- select(heart, Diabetes, Heart.Attack.Risk)
+
+# Create a contingency table
+contingency_table <- table(subset_data)
+
+# Perform Chi-Square Test of Independence
+chisq_result <- chisq.test(contingency_table)
+chisq_result
+
+
+## The p-value (0.112) is greater than 0.05.
+## There is insufficient evidence to conclude that there is a significant association between having diabetes and the risk of heart attack in the given dataset.
+
+```
+```{r}
+# Load required library
+library(dplyr)
+
+# List of categorical variable combinations
+variables <- c("Sex", "Smoking", "Obesity", "Alcohol.Consumption", "Diet", 
+               "Previous.Heart.Problems", "Medication.Use")
+
+# Function to perform Chi-Square Test of Independence
+perform_chi_square <- function(data, var1, var2) {
+  subset_data <- select(data, var1, var2)
+  contingency_table <- table(subset_data)
+  chisq_result <- chisq.test(contingency_table)
+  return(chisq_result)
+}
+
+# Perform Chi-Square Test of Independence for each combination
+results <- lapply(variables, function(var) {
+  perform_chi_square(heart, var, "Heart.Attack.Risk")
+})
+
+# Print the results
+names(results) <- variables
+results
+
+```
+
+## H0: There is no association between sex and the risk of heart attack.
+## Ha: There is an association between sex and the risk of heart attack.
+## Sex and Heart Attack Risk: p-value = 0.7906
+## There is no significant association between gender and the risk of heart attack.
+
+
+## H0: There is no association between smoking and the risk of heart attack.
+## Ha: There is an association between smoking and the risk of heart attack.
+## Smoking and Heart Attack Risk: p-value = 0.7319
+## There is no significant association between smoking status and the risk of heart attack.
+
+
+## H0: There is no association between obesity and the risk of heart attack.
+## Ha: There is an association between obesity and the risk of heart attack.
+## Obesity and Heart Attack Risk: p-value = 0.2208
+## There is no significant association between obesity status and the risk of heart attack.
+
+
+## H0: There is no association between Alcohol Consumption and the risk of heart attack.
+## Ha: There is an association between Alcohol Consumption and the risk of heart attack.
+## Alcohol Consumption and Heart Attack Risk: p-value = 0.2051
+## There is no significant association between alcohol consumption level and the risk of heart attack.
+
+
+## H0: There is no association between diet and the risk of heart attack.
+## Ha: There is an association between diet and the risk of heart attack.
+## Diet and Heart Attack Risk: p-value = 0.6204
+## There is no significant association between diet and the risk of heart attack.
+
+
+## H0: There is no association between previous heart problems and the risk of heart attack.
+## Ha: There is an association between previous heart problems and the risk of heart attack.
+## Previous Heart Problems and Heart Attack Risk: p-value = 0.9973
+## There is no significant association between previous heart problems and the risk of heart attack.
+
+
+## H0: There is no association between medication usage and the risk of heart attack.
+## Ha: There is an association between medication usage and the risk of heart attack.
+## Medication Use and Heart Attack Risk: p-value = 0.8518
+## There is no significant association between medication usage and the risk of heart attack.
+
+
+
+
+
+# MODEL BUILDING AND VARIABLE SELECTION
+
+We grouped our variables into 3 categories namely: Demographic, Lifestyle, and Medical Conditions.
+
+*Demographic Factor*
+
+```{r}
+## Model for Heart Attack Risk and Age
+dem1 <- glm(Heart.Attack.Risk~Age, data=heart)
+summary(dem1)
+```
+
+```{r}
+## Model for Heart Attack Risk and Sex
+
+dem2 <- glm(Heart.Attack.Risk~factor(Sex), data=heart)
+summary(dem2)
+```
+
+```{r}
+## Model for Heart Attack Risk and Income
+
+dem3 <- glm(Heart.Attack.Risk~Income, data=heart)
+summary(dem3)
+```
+
+```{r}
+## Model for Heart Attack Risk and Continent
+
+dem4 <- glm(Heart.Attack.Risk~factor(Continent), data=heart)
+summary(dem4)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex Income, Continent
+
+dem5 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent), data=heart)
+summary(dem5)
+```
+
+```{r}
+## Step AIC to find a good-fitting model by iteratively adding or removing predictors 
+
+library(MASS)
+stepAIC(dem5)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex Income, Continent with interaction of Age and Continent
+
+dem6 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+Age:factor(Continent), data=heart)
+summary(dem6)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex Income, Continent with interaction of Age and Sex
+
+dem7 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+Age:factor(Sex), data=heart)
+summary(dem7)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex Income, Continent with interaction of Age and Income
+
+dem8 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+Age:Income, data=heart)
+summary(dem8)
+```
+```{r}
+## Model for Heart Attack Risk and Age, Sex Income, Continent with interaction of Sex and Income
+
+dem9 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+factor(Sex):Income, data=heart)
+summary(dem9)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex, Income, Continent with interaction of Sex and Continent
+
+dem10 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+factor(Sex):factor(Continent), data=heart)
+summary(dem10)
+```
+
+```{r}
+## Model for Heart Attack Risk and Age, Sex, Income, Continent with interaction of Income and Continent
+
+dem11 <- glm(Heart.Attack.Risk~Age+factor(Sex)+Income+factor(Continent)+Income:factor(Continent), data=heart)
+summary(dem11)
+```
+
+```{r}
+## Model for Heart Attack Risk and Income, Continent with interaction of Income and Continent
+
+dem12 <- glm(Heart.Attack.Risk~Income+factor(Continent)+Income:factor(Continent), data=heart)
+summary(dem12)
+```
+
+*Lifestyle Factors
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day
+
+lifestyle1 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle1)
+```
+
+```{r}
+## Step AIC to find a good-fitting model by iteratively adding or removing predictors 
+
+stepAIC(lifestyle1)
+```
+```{r}
+## Model for Heart Attack Risk and Sleep Hours per day
+
+lifestyle2 <- glm(Heart.Attack.Risk~Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle2)
+```
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Smoking and Alcohol Consumption
+
+lifestyle3 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Smoking):factor(Alcohol.Consumption), data=heart)
+summary(lifestyle3)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Smoking and Exercise Hours Per Week
+
+lifestyle4 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Smoking):Exercise.Hours.Per.Week, data=heart)
+summary(lifestyle4)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Smoking and Diet
+
+lifestyle5 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Smoking):factor(Diet), data=heart)
+summary(lifestyle5)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Smoking and Stress Level
+
+lifestyle6 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Smoking):Stress.Level, data=heart)
+summary(lifestyle6)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Smoking and Sleep Hours Per day
+
+lifestyle7 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Smoking):Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle7)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Alcohol Consumption and Exercise Hours Per Week
+
+lifestyle8 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Alcohol.Consumption):Exercise.Hours.Per.Week, data=heart)
+summary(lifestyle8)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Alcohol Consumption and Diet
+
+lifestyle8 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Alcohol.Consumption):factor(Diet), data=heart)
+summary(lifestyle8)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Alcohol Consumption and Stress Level
+
+lifestyle9 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Alcohol.Consumption):Stress.Level, data=heart)
+summary(lifestyle9)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Alcohol Consumption and Sleep Hours per day
+
+lifestyle10 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Alcohol.Consumption):Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle10)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of ExerciseHours Per week and Diet
+
+lifestyle11 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+Exercise.Hours.Per.Week:factor(Diet), data=heart)
+summary(lifestyle11)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of Exercise Hours Per week and Stress Level
+
+lifestyle12 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+Exercise.Hours.Per.Week:Stress.Level, data=heart)
+summary(lifestyle12)
+```
+
+```{r}
+## Model for Heart Attack Risk and Smoking, Alcohol Consumption, Exercise Hours Per Week, Diet, Stress Level, Sleep Hours per day and Interaction of ExerciseHours Per week and Sleep Hours per day
+
+lifestyle13 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+Exercise.Hours.Per.Week:Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle13)
+```
+
+```{r}
+lifestyle14 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Diet):Stress.Level, data=heart)
+summary(lifestyle14)
+```
+
+```{r}
+lifestyle15 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+factor(Diet):Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle15)
+```
+
+```{r}
+lifestyle16 <- glm(Heart.Attack.Risk~factor(Smoking)+factor(Alcohol.Consumption)+Exercise.Hours.Per.Week+factor(Diet)+Stress.Level+Sleep.Hours.Per.Day+Stress.Level:Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle16)
+```
+
+```{r}
+lifestyle17 <- glm(Heart.Attack.Risk~factor(Smoking)+Sleep.Hours.Per.Day+factor(Smoking):Sleep.Hours.Per.Day, data=heart)
+summary(lifestyle17)
+```
+
+## Medical Condition & History Factor
+
+```{r}
+## Convert Blood Pressure variable to categorical variable (Systolic and Diastolic)
+library(tidyr)
+heart1 <- separate(heart, Blood.Pressure, into = c("Systolic", "Diastolic"), sep = "/")
+head(heart1)
+
+```
+
+```{r}
+# Categorize blood pressure into High, Low, Normal
+# If Systolic is higher than 140 and Diastolic is higher than 90 then Blood Pressure is High
+# If Systolic is lower than 90 and Diastolic is lower than 60 then Blood Pressure is Low
+# Otherwise, Blood Pressure is Normal
+
+heart1$BP_category <- ifelse(heart1$Systolic > 140 | heart1$Diastolic > 90, "High",
+                    ifelse(heart1$Systolic < 90 & heart1$Diastolic < 60, "Low", "Normal"))
+```
+
+```{r}
+head(heart1$BP_category,15)
+```
+
+```{r}
+heart1$BP1 <- ifelse(heart1$BP_category == "High", 1, 0)
+heart1$BP2 <- ifelse(heart1$BP_category == "Low", 1, 0)
+heart1$BP3 <- ifelse(heart1$BP_category == "Normal", 1, 0)
+```
+
+
+```{r}
+Med_cond1 <- glm(Heart.Attack.Risk~Cholesterol + BP_category + Heart.Rate + Diabetes + Family.History+Previous.Heart.Problems+Medication.Use+BMI+Triglycerides , data=heart1)
+summary(Med_cond1)
+```
+
+```{r}
+library(MASS)
+stepAIC(Med_cond1)
+```
+
+
+```{r}
+Med_cond2 <- glm(Heart.Attack.Risk~Cholesterol+BP_category+Cholesterol:BP_category, family=binomial, data=heart1)
+summary(Med_cond2)
+```
+
+
+```{r}
+Med_cond3 <- glm(Heart.Attack.Risk~Cholesterol+Heart.Rate+Cholesterol:Heart.Rate, family=binomial, data=heart1)
+summary(Med_cond3)
+```
+
+```{r}
+Med_cond4 <- glm(Heart.Attack.Risk~Cholesterol+Diabetes+Cholesterol:Diabetes, family=binomial, data=heart1)
+summary(Med_cond4)
+```
+
+```{r}
+Med_cond5 <- glm(Heart.Attack.Risk~Cholesterol+Family.History+Cholesterol:Family.History, family=binomial, data=heart1)
+summary(Med_cond5)
+```
+
+```{r}
+Med_cond6 <- glm(Heart.Attack.Risk~Cholesterol+Previous.Heart.Problems+Cholesterol:Previous.Heart.Problems, family=binomial, data=heart1)
+summary(Med_cond6)
+```
+
+```{r}
+Med_cond7 <- glm(Heart.Attack.Risk~Cholesterol+Medication.Use+Cholesterol:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond7)
+```
+
+```{r}
+Med_cond8 <- glm(Heart.Attack.Risk~Cholesterol+BMI+Cholesterol:BMI, family=binomial, data=heart1)
+summary(Med_cond8)
+```
+
+```{r}
+Med_cond9 <- glm(Heart.Attack.Risk~Cholesterol+Triglycerides+Cholesterol:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond9)
+```
+
+
+```{r}
+Med_cond10 <- glm(Heart.Attack.Risk~Heart.Rate+Diabetes+Heart.Rate:Diabetes, family=binomial, data=heart1)
+summary(Med_cond10)
+```
+
+```{r}
+Med_cond11 <- glm(Heart.Attack.Risk~Heart.Rate+Previous.Heart.Problems+Heart.Rate:Previous.Heart.Problems, family=binomial, data=heart1)
+summary(Med_cond11)
+```
+
+```{r}
+Med_cond12 <- glm(Heart.Attack.Risk~Heart.Rate+Medication.Use+Heart.Rate:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond12)
+```
+
+```{r}
+Med_cond14 <- glm(Heart.Attack.Risk~Heart.Rate+BMI+Heart.Rate:BMI, family=binomial, data=heart1)
+summary(Med_cond14)
+```
+
+```{r}
+Med_cond15 <- glm(Heart.Attack.Risk~Heart.Rate+Triglycerides+Heart.Rate:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond15)
+```
+
+```{r}
+Med_cond16 <- glm(Heart.Attack.Risk~Diabetes+Family.History+Diabetes:Family.History, family=binomial, data=heart1)
+summary(Med_cond16)
+```
+
+```{r}
+Med_cond17 <- glm(Heart.Attack.Risk~Diabetes+Previous.Heart.Problems+Diabetes:Previous.Heart.Problems, family=binomial, data=heart1)
+summary(Med_cond17)
+```
+
+```{r}
+Med_cond18 <- glm(Heart.Attack.Risk~Diabetes+Medication.Use+Diabetes:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond18)
+```
+
+```{r}
+Med_cond19 <- glm(Heart.Attack.Risk~Diabetes+BMI+Diabetes:BMI, family=binomial, data=heart1)
+summary(Med_cond19)
+```
+
+```{r}
+Med_cond20 <- glm(Heart.Attack.Risk~Diabetes+Triglycerides+Diabetes:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond20)
+```
+
+```{r}
+Med_cond21 <- glm(Heart.Attack.Risk~Family.History+Previous.Heart.Problems+Family.History:Previous.Heart.Problems, family=binomial, data=heart1)
+summary(Med_cond21)
+```
+
+
+```{r}
+Med_cond22 <- glm(Heart.Attack.Risk~Family.History+Medication.Use+Family.History:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond22)
+```
+
+```{r}
+Med_cond23 <- glm(Heart.Attack.Risk~Family.History+BMI+Family.History:BMI, family=binomial, data=heart1)
+summary(Med_cond23)
+```
+
+```{r}
+Med_cond24 <- glm(Heart.Attack.Risk~Family.History+Triglycerides+Family.History:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond24)
+```
+
+```{r}
+Med_cond25 <- glm(Heart.Attack.Risk~Previous.Heart.Problems+Medication.Use+Previous.Heart.Problems:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond25)
+```
+
+```{r}
+Med_cond26 <- glm(Heart.Attack.Risk~Previous.Heart.Problems+BMI+Previous.Heart.Problems:BMI, family=binomial, data=heart1)
+summary(Med_cond26)
+```
+
+```{r}
+Med_cond27 <- glm(Heart.Attack.Risk~Previous.Heart.Problems+Triglycerides+Previous.Heart.Problems:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond27)
+```
+
+```{r}
+Med_cond28 <- glm(Heart.Attack.Risk~Medication.Use+BMI+Medication.Use:BMI, family=binomial, data=heart1)
+summary(Med_cond28)
+```
+
+```{r}
+Med_cond29 <- glm(Heart.Attack.Risk~Medication.Use+Triglycerides+Medication.Use:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond29)
+```
+
+```{r}
+Med_cond30 <- glm(Heart.Attack.Risk~BMI+Triglycerides+BMI:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond30)
+```
+
+```{r}
+Med_cond31 <- glm(Heart.Attack.Risk~BP_category+Heart.Rate+BP_category:Heart.Rate, family=binomial, data=heart1)
+summary(Med_cond31)
+```
+
+```{r}
+Med_cond32 <- glm(Heart.Attack.Risk~BP_category+Diabetes+BP_category:Diabetes, family=binomial, data=heart1)
+summary(Med_cond32)
+```
+
+
+```{r}
+Med_cond33 <- glm(Heart.Attack.Risk~BP_category+Family.History+BP_category:Family.History, family=binomial, data=heart1)
+summary(Med_cond33)
+```
+
+```{r}
+Med_cond34 <- glm(Heart.Attack.Risk~BP_category+Previous.Heart.Problems+BP_category:Previous.Heart.Problems, family=binomial, data=heart1)
+summary(Med_cond34)
+```
+
+```{r}
+Med_cond35 <- glm(Heart.Attack.Risk~BP_category+Medication.Use+BP_category:Medication.Use, family=binomial, data=heart1)
+summary(Med_cond35)
+```
+
+
+```{r}
+Med_cond37 <- glm(Heart.Attack.Risk~BP_category+Triglycerides+BP_category:Triglycerides, family=binomial, data=heart1)
+summary(Med_cond37)
+```
+
+## For the variables of medical conditions which are Cholesterol, Blood Pressure, Heart Rate, Diabetes, Family History, Previous Heart Problems, Medication Use, BMI, and Triglycerides,the models showed that significant variables are BMI and Cholesterol.
+
+
+
+```{r}
+## Best Model according to our analysis of the dataset
+
+simple_model<- glm(Heart.Attack.Risk~BMI   + Cholesterol+ BMI: Cholesterol, family = binomial, data = heart1)
+summary(simple_model)
+```
+
+```{r}
+## Model based on the significant variables in the Literature Review
+
+saturated_model<- glm(Heart.Attack.Risk~Smoking+Alcohol.Consumption+Diet+Previous.Heart.Problems+Age+Sex+BP_category+Income, family=binomial, data=heart1)
+summary(saturated_model)
+```
+## Goodness of Fit: Model Comparison Using the Deviance
+## A likelihood-ratio test compares the tentatively chosen model to more complex ones.
+
+H0 : The simple model provides an adequate fit to the data.
+Ha : The saturated model provides an adequate fit to the data.
+
+```{r}
+## LRT for the 2 models
+## The LRT compares the likelihoods of the two models and provides a p-value. If the p-value is low (< 0.05), it suggests that the saturated model provides a significantly better fit to the data compared to the simpler model.
+
+library(lmtest)
+lrtest(simple_model,saturated_model)
+```
+
+H0 : The simple model provides an adequate fit to the data.
+Ha : The saturated model provides an adequate fit to the data.
+
+```{r}
+## Anova test to compare 2 models
+## The ANOVA test provides a similar comparison, showing whether the reduction in deviance (a measure of model fit) from the saturated model to the simpler model is statistically significant.
+
+library(car)
+anova(simple_model,saturated_model, test="Chisq")
+
+```
+
+
+```{r}
+# Create ROC curve for BMI
+roc_bmi <- roc(heart1$Heart.Attack.Risk, heart1$BMI)
+auc_bmi <- auc(roc_bmi)
+plot.roc(roc_bmi, main = "ROC Curve for BMI", col = "blue", legacy.axes = TRUE)
+legend("bottomright", legend = paste("AUC =", round(auc_bmi, 2)), bty = "n")
+
+# Create ROC curve for Cholesterol
+roc_cholesterol <- roc(heart1$Heart.Attack.Risk, heart1$Cholesterol)
+auc_cholesterol <- auc(roc_cholesterol)
+plot.roc(roc_cholesterol, main = "ROC Curve for Cholesterol", col = "red", legacy.axes = TRUE)
+legend("bottomright", legend = paste("AUC =", round(auc_cholesterol, 2)), bty = "n")
+```
+
